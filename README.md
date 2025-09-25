@@ -83,15 +83,18 @@ copy-cookies/
 ## 🐛 Troubleshooting
 
 **Domain Issues:**
+
 - Ensure the domain is entered correctly (without http:// or https://)
 - Check for typos in the domain name
 
 **Cookie Copying Issues:**
+
 - Some cookies might not be copyable due to browser security restrictions
 - Check the browser console (F12) for detailed error messages
 - Ensure you have the necessary permissions for the target domain
 
 **Extension Not Working:**
+
 - Verify the extension is enabled in `chrome://extensions/`
 - Try refreshing the page and reopening the extension
 - Check if the extension has the required permissions
