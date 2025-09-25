@@ -39,10 +39,11 @@ A simple Chrome extension that allows you to copy cookies from any domain to loc
 - `popup.html` - User interface
 - `popup.css` - Styling for the popup
 - `popup.js` - Main functionality for copying cookies
+- `img/` - Extension icons and images
 
 ## Icons
 
-The extension includes placeholder icon files (`icon16.png`, `icon48.png`, `icon128.png`). You can replace these with custom icons if desired.
+The extension includes placeholder icon files in the `img/` folder (`img/icon16.png`, `img/icon48.png`, `img/icon128.png`). You can replace these with custom icons if desired.
 
 **Note:** The extension will work with the included placeholder icons.
 
