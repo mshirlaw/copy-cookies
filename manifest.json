@@ -3,15 +3,8 @@
   "name": "Copy Cookies",
   "version": "1.0",
   "description": "Copy cookies from any domain to localhost",
-  "permissions": [
-    "cookies",
-    "activeTab",
-    "tabs"
-  ],
-  "host_permissions": [
-    "http://*/*",
-    "https://*/*"
-  ],
+  "permissions": ["cookies", "activeTab", "tabs"],
+  "host_permissions": ["http://*/*", "https://*/*"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Copy Cookies"
