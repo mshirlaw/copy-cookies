@@ -103,9 +103,59 @@ copy-cookies/
 
 This project is open source and available under the MIT License.
 
+## 📦 Publishing to Chrome Web Store
+
+This extension includes automated CI/CD for publishing to the Chrome Web Store. See [CHROME_STORE_PUBLISHING.md](CHROME_STORE_PUBLISHING.md) for complete setup instructions.
+
+### Quick Release Process
+
+1. Make your changes and commit them
+2. Create a new release:
+   ```bash
+   git tag v1.0.1
+   git push origin v1.0.1
+   ```
+3. The GitHub Actions workflow will automatically:
+   - Validate the extension
+   - Package it for the Chrome Web Store
+   - Upload and publish the update
+
+### First-Time Setup Required
+
+- Chrome Web Store developer account ($5 registration)
+- Google Cloud project with Chrome Web Store API enabled
+- OAuth2 credentials configured
+- GitHub repository secrets set up
+
+See the [detailed publishing guide](CHROME_STORE_PUBLISHING.md) for step-by-step instructions.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test the extension locally
+5. Submit a pull request
+
+### Local Testing
+
+```bash
+# Validate the extension
+npm run validate
+
+# Create a test package
+npm run package
+```
+
+Then load the extension in Chrome:
+
+1. Go to `chrome://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked" and select this directory
 
 ---
 
