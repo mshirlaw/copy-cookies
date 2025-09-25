@@ -1,5 +1,3 @@
-// No global DOM references needed - access elements directly when needed
-
 /**
  * Displays a status message to the user with specified styling
  * @param {string} message - The message to display
@@ -27,9 +25,7 @@ function clearStatus() {
  */
 function isValidDomain(domain) {
   domain = domain.replace(/^https?:\/\//, "");
-
   domain = domain.replace(/\/$/, "");
-
   const domainRegex =
     /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9])*$/;
   return domainRegex.test(domain);
@@ -68,24 +64,37 @@ function calculateExpiration(originalExpiration, mode) {
   const now = Date.now() / 1000; // Current time in seconds
 
   switch (mode) {
-    case "original":
+    case "original": {
       return originalExpiration;
-    case "development":
+    }
+
+    case "development": {
+      // 24 hours from now
       return now + 24 * 60 * 60;
-    case "testing":
+    }
+
+    case "testing": {
+      // 1 hour from now
       return now + 60 * 60;
-    case "session":
+    }
+
+    case "session": {
+      // No expiration (session cookie)
       return undefined;
-    case "custom":
+    }
+
+    case "custom": {
       const customHoursInput = document.getElementById("customHours");
       const customUnitSelect = document.getElementById("customUnit");
       const hours = parseInt(customHoursInput.value) || 24;
       const unit = customUnitSelect.value;
       const multiplier = unit === "days" ? 24 : 1;
       return now + hours * multiplier * 60 * 60;
+    }
 
-    default:
+    default: {
       return originalExpiration;
+    }
   }
 }
 
@@ -96,22 +105,33 @@ function calculateExpiration(originalExpiration, mode) {
  */
 function getExpirationDescription(mode) {
   switch (mode) {
-    case "original":
+    case "original": {
       return "with original expiration";
-    case "development":
+    }
+
+    case "development": {
       return "with 24-hour expiration";
-    case "testing":
+    }
+
+    case "testing": {
       return "with 1-hour expiration";
-    case "session":
+    }
+
+    case "session": {
       return "as session cookies";
-    case "custom":
+    }
+
+    case "custom": {
       const customHoursInput = document.getElementById("customHours");
       const customUnitSelect = document.getElementById("customUnit");
       const hours = parseInt(customHoursInput.value) || 24;
       const unit = customUnitSelect.value;
       return `with ${hours} ${unit} expiration`;
-    default:
+    }
+
+    default: {
       return "with original expiration";
+    }
   }
 }
 
@@ -188,7 +208,7 @@ async function copyCookies() {
   const domainInput = document.getElementById("domain");
   const copyButton = document.getElementById("copyButton");
   const clearFirstCheckbox = document.getElementById("clearFirst");
-  
+
   const domain = domainInput.value.trim();
 
   if (!domain) {
@@ -204,7 +224,6 @@ async function copyCookies() {
   const normalizedDomain = normalizeDomain(domain);
   const expirationMode = getExpirationMode();
 
-  // Validate custom expiration input
   if (expirationMode === "custom") {
     const customHoursInput = document.getElementById("customHours");
     const customHours = parseInt(customHoursInput.value);
@@ -312,7 +331,7 @@ function handleDomainKeypress(e) {
 function handleExpirationChange() {
   const customHoursInput = document.getElementById("customHours");
   const customUnitSelect = document.getElementById("customUnit");
-  
+
   const isCustom = this.value === "custom";
   customHoursInput.disabled = !isCustom;
   customUnitSelect.disabled = !isCustom;
@@ -330,31 +349,28 @@ function handleExpirationChange() {
  * @returns {Promise<void>}
  */
 async function initializePopup() {
-  // Get DOM element references for setup
   const domainInput = document.getElementById("domain");
   const copyButton = document.getElementById("copyButton");
   const clearFirstCheckbox = document.getElementById("clearFirst");
-  const expirationRadios = document.querySelectorAll('input[name="expiration"]');
+  const expirationRadios = document.querySelectorAll(
+    'input[name="expiration"]',
+  );
 
-  // Pre-populate domain from current tab
   const currentDomain = await getCurrentTabDomain();
   if (currentDomain) {
     domainInput.value = currentDomain;
-    domainInput.select(); // Select the text so user can easily replace it
+    domainInput.select();
   }
 
-  // Set up event listeners
   copyButton.addEventListener("click", copyCookies);
   domainInput.addEventListener("keypress", handleDomainKeypress);
   domainInput.addEventListener("input", clearStatus);
   clearFirstCheckbox.addEventListener("change", clearStatus);
 
-  // Handle expiration radio button changes
   expirationRadios.forEach((radio) => {
     radio.addEventListener("change", handleExpirationChange);
   });
 
-  // Focus on domain input when popup opens
   domainInput.focus();
 }
 
