@@ -94,6 +94,9 @@ button:disabled {
   margin-bottom: 8px;
   font-weight: normal;
   cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
 }
 
 .radio-option input[type="radio"] {
@@ -134,7 +137,4 @@ button:disabled {
 
 .radio-option:hover {
   background-color: #f8f9fa;
-  border-radius: 3px;
-  padding: 2px 4px;
-  margin: 6px -4px;
 }
