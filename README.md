@@ -37,8 +37,10 @@ A simple Chrome extension that allows you to copy cookies from any domain to loc
 
 - `manifest.json` - Extension configuration and permissions
 - `popup.html` - User interface
-- `popup.css` - Styling for the popup
-- `popup.js` - Main functionality for copying cookies
+- `css/` - Stylesheets
+  - `popup.css` - Styling for the popup
+- `js/` - JavaScript files
+  - `popup.js` - Main functionality for copying cookies
 - `img/` - Extension icons and images
 
 ## Icons
