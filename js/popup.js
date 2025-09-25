@@ -8,16 +8,30 @@ let expirationRadios;
 let clearFirstCheckbox;
 
 // Utility functions
+
+/**
+ * Displays a status message to the user with specified styling
+ * @param {string} message - The message to display
+ * @param {string} [type="info"] - The type of message (info, success, error)
+ */
 function showStatus(message, type = "info") {
   statusDiv.textContent = message;
   statusDiv.className = `status ${type}`;
 }
 
+/**
+ * Clears the current status message
+ */
 function clearStatus() {
   statusDiv.textContent = "";
   statusDiv.className = "status";
 }
 
+/**
+ * Validates if a domain string is properly formatted
+ * @param {string} domain - The domain to validate
+ * @returns {boolean} True if domain is valid, false otherwise
+ */
 function isValidDomain(domain) {
   // Remove protocol if present
   domain = domain.replace(/^https?:\/\//, "");
@@ -30,6 +44,11 @@ function isValidDomain(domain) {
   return domainRegex.test(domain);
 }
 
+/**
+ * Normalizes a domain by removing protocol, trailing slash, and www prefix
+ * @param {string} domain - The domain to normalize
+ * @returns {string} The normalized domain
+ */
 function normalizeDomain(domain) {
   // Remove protocol if present
   domain = domain.replace(/^https?:\/\//, "");
@@ -40,6 +59,10 @@ function normalizeDomain(domain) {
   return domain;
 }
 
+/**
+ * Gets the currently selected expiration mode from radio buttons
+ * @returns {string} The selected expiration mode (original, development, testing, session, custom)
+ */
 function getExpirationMode() {
   const selectedRadio = document.querySelector(
     'input[name="expiration"]:checked',
@@ -47,6 +70,12 @@ function getExpirationMode() {
   return selectedRadio ? selectedRadio.value : "original";
 }
 
+/**
+ * Calculates the new expiration date based on the selected mode
+ * @param {number|undefined} originalExpiration - Original cookie expiration timestamp
+ * @param {string} mode - The expiration mode to apply
+ * @returns {number|undefined} New expiration timestamp or undefined for session cookies
+ */
 function calculateExpiration(originalExpiration, mode) {
   const now = Date.now() / 1000; // Current time in seconds
 
@@ -77,6 +106,11 @@ function calculateExpiration(originalExpiration, mode) {
   }
 }
 
+/**
+ * Gets a human-readable description of the expiration mode for status messages
+ * @param {string} mode - The expiration mode
+ * @returns {string} Human-readable description of the expiration setting
+ */
 function getExpirationDescription(mode) {
   switch (mode) {
     case "original":
@@ -96,6 +130,11 @@ function getExpirationDescription(mode) {
   }
 }
 
+/**
+ * Clears all existing cookies from localhost
+ * @returns {Promise<number>} The number of cookies successfully cleared
+ * @throws {Error} If there's an error accessing cookies
+ */
 async function clearLocalhostCookies() {
   try {
     const localhostCookies = await chrome.cookies.getAll({
@@ -123,6 +162,10 @@ async function clearLocalhostCookies() {
   }
 }
 
+/**
+ * Gets the domain of the currently active tab for auto-population
+ * @returns {Promise<string|null>} The domain of the current tab, or null if unavailable
+ */
 async function getCurrentTabDomain() {
   try {
     const [tab] = await chrome.tabs.query({
@@ -153,6 +196,11 @@ async function getCurrentTabDomain() {
   return null;
 }
 
+/**
+ * Main function to copy cookies from source domain to localhost with expiration management
+ * Handles validation, clearing existing cookies (if enabled), and copying with new expiration settings
+ * @returns {Promise<void>}
+ */
 async function copyCookies() {
   const domain = domainInput.value.trim();
 
@@ -243,9 +291,7 @@ async function copyCookies() {
     if (successCount > 0) {
       const expirationDesc = getExpirationDescription(expirationMode);
       const clearedMsg =
-        clearedCount > 0
-          ? `Cleared ${clearedCount} existing cookie(s). `
-          : "";
+        clearedCount > 0 ? `Cleared ${clearedCount} existing cookie(s). ` : "";
       showStatus(
         `${clearedMsg}Successfully copied ${successCount} cookie(s) to localhost ${expirationDesc}${errorCount > 0 ? ` (${errorCount} failed)` : ""}`,
         "success",
@@ -266,12 +312,23 @@ async function copyCookies() {
 }
 
 // Event handlers
+
+/**
+ * Handles keypress events in the domain input field
+ * Triggers cookie copying when Enter key is pressed
+ * @param {KeyboardEvent} e - The keyboard event
+ */
 function handleDomainKeypress(e) {
   if (e.key === "Enter") {
     copyCookies();
   }
 }
 
+/**
+ * Handles changes to expiration mode radio buttons
+ * Enables/disables custom expiration inputs and clears status
+ * @this {HTMLInputElement} The radio button that was changed
+ */
 function handleExpirationChange() {
   const isCustom = this.value === "custom";
   customHoursInput.disabled = !isCustom;
@@ -285,6 +342,12 @@ function handleExpirationChange() {
 }
 
 // Initialization function
+
+/**
+ * Initializes the popup by setting up DOM references, event listeners, and auto-populating the domain
+ * Called when the DOM content is loaded
+ * @returns {Promise<void>}
+ */
 async function initializePopup() {
   // Get DOM element references
   domainInput = document.getElementById("domain");
