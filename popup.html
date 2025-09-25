@@ -11,6 +11,39 @@
       <label for="domain">Source Domain:</label>
       <input type="text" id="domain" placeholder="example.com" />
     </div>
+    
+    <div class="form-group">
+      <label>Cookie Expiration:</label>
+      <div class="expiration-options">
+        <label class="radio-option">
+          <input type="radio" name="expiration" value="original" checked>
+          <span>Keep Original Expiration</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="expiration" value="development">
+          <span>Development Mode (24 hours)</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="expiration" value="testing">
+          <span>Testing Mode (1 hour)</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="expiration" value="session">
+          <span>Session Only (browser close)</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="expiration" value="custom">
+          <span>Custom: 
+            <input type="number" id="customHours" min="1" max="8760" value="24" disabled>
+            <select id="customUnit" disabled>
+              <option value="hours">hours</option>
+              <option value="days">days</option>
+            </select>
+          </span>
+        </label>
+      </div>
+    </div>
+    
     <button id="copyButton">Copy Cookies to Localhost</button>
     <div id="status" class="status"></div>
   </div>
