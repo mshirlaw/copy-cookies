@@ -52,6 +52,7 @@ The extension includes placeholder icon files in the `img/` folder (`img/icon16.
 ## Permissions
 
 The extension requires:
+
 - `cookies` - To read cookies from source domains and write to localhost
 - `activeTab` - To work with the current tab
 - `tabs` - To query the current tab's URL for auto-populating the domain

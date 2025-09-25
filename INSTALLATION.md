@@ -20,6 +20,7 @@
 ## What It Does
 
 This extension copies all cookies from any domain to `http://localhost`. This is useful for:
+
 - Testing applications locally with production cookies
 - Debugging authentication issues
 - Development workflows that require specific cookie values

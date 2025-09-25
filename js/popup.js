@@ -1,30 +1,39 @@
-document.addEventListener('DOMContentLoaded', async function() {
-  const domainInput = document.getElementById('domain');
-  const copyButton = document.getElementById('copyButton');
-  const statusDiv = document.getElementById('status');
-  const customHoursInput = document.getElementById('customHours');
-  const customUnitSelect = document.getElementById('customUnit');
-  const expirationRadios = document.querySelectorAll('input[name="expiration"]');
-  const clearFirstCheckbox = document.getElementById('clearFirst');
+document.addEventListener("DOMContentLoaded", async function () {
+  const domainInput = document.getElementById("domain");
+  const copyButton = document.getElementById("copyButton");
+  const statusDiv = document.getElementById("status");
+  const customHoursInput = document.getElementById("customHours");
+  const customUnitSelect = document.getElementById("customUnit");
+  const expirationRadios = document.querySelectorAll(
+    'input[name="expiration"]',
+  );
+  const clearFirstCheckbox = document.getElementById("clearFirst");
 
   // Get current tab's domain and pre-populate the input
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
     if (tab && tab.url) {
       const url = new URL(tab.url);
       const currentDomain = url.hostname;
-      
+
       // Remove www. prefix if present
-      const cleanDomain = currentDomain.replace(/^www\./, '');
-      
+      const cleanDomain = currentDomain.replace(/^www\./, "");
+
       // Only pre-populate if it's a valid domain (not chrome:// or other special URLs)
-      if (currentDomain && !currentDomain.startsWith('chrome') && currentDomain.includes('.')) {
+      if (
+        currentDomain &&
+        !currentDomain.startsWith("chrome") &&
+        currentDomain.includes(".")
+      ) {
         domainInput.value = cleanDomain;
         domainInput.select(); // Select the text so user can easily replace it
       }
     }
   } catch (error) {
-    console.log('Could not get current tab domain:', error);
+    console.log("Could not get current tab domain:", error);
     // Silently fail - user can still enter domain manually
   }
 
@@ -66,36 +75,38 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // Function to get selected expiration mode
   function getExpirationMode() {
-    const selectedRadio = document.querySelector('input[name="expiration"]:checked');
-    return selectedRadio ? selectedRadio.value : 'original';
+    const selectedRadio = document.querySelector(
+      'input[name="expiration"]:checked',
+    );
+    return selectedRadio ? selectedRadio.value : "original";
   }
 
   // Function to calculate new expiration date based on mode
   function calculateExpiration(originalExpiration, mode) {
     const now = Date.now() / 1000; // Current time in seconds
-    
+
     switch (mode) {
-      case 'original':
+      case "original":
         return originalExpiration;
-        
-      case 'development':
+
+      case "development":
         // 24 hours from now
-        return now + (24 * 60 * 60);
-        
-      case 'testing':
+        return now + 24 * 60 * 60;
+
+      case "testing":
         // 1 hour from now
-        return now + (60 * 60);
-        
-      case 'session':
+        return now + 60 * 60;
+
+      case "session":
         // No expiration (session cookie)
         return undefined;
-        
-      case 'custom':
+
+      case "custom":
         const hours = parseInt(customHoursInput.value) || 24;
         const unit = customUnitSelect.value;
-        const multiplier = unit === 'days' ? 24 : 1;
-        return now + (hours * multiplier * 60 * 60);
-        
+        const multiplier = unit === "days" ? 24 : 1;
+        return now + hours * multiplier * 60 * 60;
+
       default:
         return originalExpiration;
     }
@@ -104,20 +115,20 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Function to get expiration mode description for status
   function getExpirationDescription(mode) {
     switch (mode) {
-      case 'original':
-        return 'with original expiration';
-      case 'development':
-        return 'with 24-hour expiration';
-      case 'testing':
-        return 'with 1-hour expiration';
-      case 'session':
-        return 'as session cookies';
-      case 'custom':
+      case "original":
+        return "with original expiration";
+      case "development":
+        return "with 24-hour expiration";
+      case "testing":
+        return "with 1-hour expiration";
+      case "session":
+        return "as session cookies";
+      case "custom":
         const hours = parseInt(customHoursInput.value) || 24;
         const unit = customUnitSelect.value;
         return `with ${hours} ${unit} expiration`;
       default:
-        return 'with original expiration';
+        return "with original expiration";
     }
   }
 
@@ -125,26 +136,26 @@ document.addEventListener('DOMContentLoaded', async function() {
   async function clearLocalhostCookies() {
     try {
       const localhostCookies = await chrome.cookies.getAll({
-        url: 'http://localhost'
+        url: "http://localhost",
       });
-      
+
       let clearedCount = 0;
       for (const cookie of localhostCookies) {
         try {
           await chrome.cookies.remove({
-            url: 'http://localhost',
+            url: "http://localhost",
             name: cookie.name,
-            path: cookie.path
+            path: cookie.path,
           });
           clearedCount++;
         } catch (error) {
           console.error(`Failed to remove cookie ${cookie.name}:`, error);
         }
       }
-      
+
       return clearedCount;
     } catch (error) {
-      console.error('Error clearing localhost cookies:', error);
+      console.error("Error clearing localhost cookies:", error);
       throw error;
     }
   }
@@ -165,27 +176,30 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const normalizedDomain = normalizeDomain(domain);
     const expirationMode = getExpirationMode();
-    
+
     // Validate custom expiration input
-    if (expirationMode === 'custom') {
+    if (expirationMode === "custom") {
       const customHours = parseInt(customHoursInput.value);
       if (!customHours || customHours < 1 || customHours > 8760) {
-        showStatus('Please enter a valid custom expiration (1-8760 hours)', 'error');
+        showStatus(
+          "Please enter a valid custom expiration (1-8760 hours)",
+          "error",
+        );
         return;
       }
     }
 
     try {
       copyButton.disabled = true;
-      
+
       let clearedCount = 0;
-      
+
       // Clear localhost cookies first if option is enabled
       if (clearFirstCheckbox.checked) {
         showStatus("Clearing localhost cookies...", "info");
         clearedCount = await clearLocalhostCookies();
       }
-      
+
       showStatus("Copying cookies...", "info");
 
       // Get all cookies for the source domain
@@ -217,7 +231,10 @@ document.addEventListener('DOMContentLoaded', async function() {
           };
 
           // Calculate and set expiration based on selected mode
-          const newExpiration = calculateExpiration(cookie.expirationDate, expirationMode);
+          const newExpiration = calculateExpiration(
+            cookie.expirationDate,
+            expirationMode,
+          );
           if (newExpiration !== undefined) {
             newCookie.expirationDate = newExpiration;
           }
@@ -233,13 +250,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       if (successCount > 0) {
         const expirationDesc = getExpirationDescription(expirationMode);
-        const clearedMsg = clearedCount > 0 ? `Cleared ${clearedCount} existing cookie(s). ` : '';
+        const clearedMsg =
+          clearedCount > 0
+            ? `Cleared ${clearedCount} existing cookie(s). `
+            : "";
         showStatus(
           `${clearedMsg}Successfully copied ${successCount} cookie(s) to localhost ${expirationDesc}${errorCount > 0 ? ` (${errorCount} failed)` : ""}`,
           "success",
         );
       } else {
-        const clearedMsg = clearedCount > 0 ? `Cleared ${clearedCount} existing cookie(s), but ` : '';
+        const clearedMsg =
+          clearedCount > 0
+            ? `Cleared ${clearedCount} existing cookie(s), but `
+            : "";
         showStatus(`${clearedMsg}Failed to copy any cookies`, "error");
       }
     } catch (error) {
@@ -262,22 +285,22 @@ document.addEventListener('DOMContentLoaded', async function() {
   domainInput.addEventListener("input", clearStatus);
 
   // Handle expiration radio button changes
-  expirationRadios.forEach(radio => {
-    radio.addEventListener('change', function() {
-      const isCustom = this.value === 'custom';
+  expirationRadios.forEach((radio) => {
+    radio.addEventListener("change", function () {
+      const isCustom = this.value === "custom";
       customHoursInput.disabled = !isCustom;
       customUnitSelect.disabled = !isCustom;
-      
+
       if (isCustom) {
         customHoursInput.focus();
       }
-      
+
       clearStatus();
     });
   });
 
   // Handle clear first checkbox change
-  clearFirstCheckbox.addEventListener('change', clearStatus);
+  clearFirstCheckbox.addEventListener("change", clearStatus);
 
   // Focus on domain input when popup opens
   domainInput.focus();
