@@ -138,3 +138,23 @@ button:disabled {
 .radio-option:hover {
   background-color: #f8f9fa;
 }
+
+/* Checkbox Option Styling */
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  font-weight: normal;
+  cursor: pointer;
+  padding: 8px 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.checkbox-option input[type="checkbox"] {
+  margin-right: 8px;
+  margin-bottom: 0;
+}
+
+.checkbox-option:hover {
+  background-color: #f8f9fa;
+}

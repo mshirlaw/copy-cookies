@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   const customHoursInput = document.getElementById('customHours');
   const customUnitSelect = document.getElementById('customUnit');
   const expirationRadios = document.querySelectorAll('input[name="expiration"]');
+  const clearFirstCheckbox = document.getElementById('clearFirst');
 
   // Get current tab's domain and pre-populate the input
   try {
@@ -120,6 +121,34 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   }
 
+  // Function to clear all localhost cookies
+  async function clearLocalhostCookies() {
+    try {
+      const localhostCookies = await chrome.cookies.getAll({
+        url: 'http://localhost'
+      });
+      
+      let clearedCount = 0;
+      for (const cookie of localhostCookies) {
+        try {
+          await chrome.cookies.remove({
+            url: 'http://localhost',
+            name: cookie.name,
+            path: cookie.path
+          });
+          clearedCount++;
+        } catch (error) {
+          console.error(`Failed to remove cookie ${cookie.name}:`, error);
+        }
+      }
+      
+      return clearedCount;
+    } catch (error) {
+      console.error('Error clearing localhost cookies:', error);
+      throw error;
+    }
+  }
+
   // Main function to copy cookies
   async function copyCookies() {
     const domain = domainInput.value.trim();
@@ -148,6 +177,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     try {
       copyButton.disabled = true;
+      
+      let clearedCount = 0;
+      
+      // Clear localhost cookies first if option is enabled
+      if (clearFirstCheckbox.checked) {
+        showStatus("Clearing localhost cookies...", "info");
+        clearedCount = await clearLocalhostCookies();
+      }
+      
       showStatus("Copying cookies...", "info");
 
       // Get all cookies for the source domain
@@ -195,12 +233,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       if (successCount > 0) {
         const expirationDesc = getExpirationDescription(expirationMode);
+        const clearedMsg = clearedCount > 0 ? `Cleared ${clearedCount} existing cookie(s). ` : '';
         showStatus(
-          `Successfully copied ${successCount} cookie(s) to localhost ${expirationDesc}${errorCount > 0 ? ` (${errorCount} failed)` : ""}`,
+          `${clearedMsg}Successfully copied ${successCount} cookie(s) to localhost ${expirationDesc}${errorCount > 0 ? ` (${errorCount} failed)` : ""}`,
           "success",
         );
       } else {
-        showStatus("Failed to copy any cookies", "error");
+        const clearedMsg = clearedCount > 0 ? `Cleared ${clearedCount} existing cookie(s), but ` : '';
+        showStatus(`${clearedMsg}Failed to copy any cookies`, "error");
       }
     } catch (error) {
       console.error("Error copying cookies:", error);
@@ -235,6 +275,9 @@ document.addEventListener('DOMContentLoaded', async function() {
       clearStatus();
     });
   });
+
+  // Handle clear first checkbox change
+  clearFirstCheckbox.addEventListener('change', clearStatus);
 
   // Focus on domain input when popup opens
   domainInput.focus();
