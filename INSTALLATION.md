@@ -2,19 +2,14 @@
 
 ## Quick Start
 
-1. **Generate Icons (Optional but Recommended)**
-   - Open `icon_generator.html` in your web browser
-   - Click each download button to get the icon files
-   - Save them in this folder as `icon16.png`, `icon48.png`, and `icon128.png`
-
-2. **Install the Extension**
+1. **Install the Extension**
    - Open Google Chrome
    - Navigate to `chrome://extensions/`
    - Enable "Developer mode" (toggle in top-right corner)
    - Click "Load unpacked"
    - Select this folder (`copy-cookies`)
 
-3. **Use the Extension**
+2. **Use the Extension**
    - Navigate to any website
    - Click the extension icon in your Chrome toolbar
    - The domain field will auto-populate with the current site's domain
