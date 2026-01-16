@@ -10,11 +10,51 @@ body {
 }
 
 h2 {
-    margin: 0 0 20px 0;
+    margin: 0 0 15px 0;
     color: #333;
     text-align: center;
 }
 
+/* Tabs Styling */
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 15px;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+.tab-button.active {
+    color: #2196F3;
+    border-bottom-color: #2196F3;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Form Styling */
 .form-group {
     margin-bottom: 15px;
 }
@@ -26,7 +66,9 @@ label {
     color: #555;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="email"],
+input[type="password"] {
     width: 100%;
     padding: 8px;
     border: 1px solid #ddd;
@@ -38,7 +80,7 @@ input[type="text"] {
 button {
     width: 100%;
     padding: 10px;
-    background-color: #4caf50;
+    background-color: #2196F3;
     color: white;
     border: none;
     border-radius: 4px;
@@ -48,7 +90,7 @@ button {
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #1976D2;
 }
 
 button:disabled {

@@ -2,18 +2,20 @@
  * Displays a status message to the user with specified styling
  * @param {string} message - The message to display
  * @param {string} [type="info"] - The type of message (info, success, error)
+ * @param {string} [elementId="status"] - The ID of the status element to update
  */
-function showStatus(message, type = "info") {
-  const statusDiv = document.getElementById("status");
+function showStatus(message, type = "info", elementId = "status") {
+  const statusDiv = document.getElementById(elementId);
   statusDiv.textContent = message;
   statusDiv.className = `status ${type}`;
 }
 
 /**
  * Clears the current status message
+ * @param {string} [elementId="status"] - The ID of the status element to clear
  */
-function clearStatus() {
-  const statusDiv = document.getElementById("status");
+function clearStatus(elementId = "status") {
+  const statusDiv = document.getElementById(elementId);
   statusDiv.textContent = "";
   statusDiv.className = "status";
 }
@@ -49,7 +51,7 @@ function normalizeDomain(domain) {
  */
 function getExpirationMode() {
   const selectedRadio = document.querySelector(
-    'input[name="expiration"]:checked',
+    'input[name="expiration"]:checked'
   );
   return selectedRadio ? selectedRadio.value : "original";
 }
@@ -230,7 +232,7 @@ async function copyCookies() {
     if (!customHours || customHours < 1 || customHours > 8760) {
       showStatus(
         "Please enter a valid custom expiration (1-8760 hours)",
-        "error",
+        "error"
       );
       return;
     }
@@ -275,7 +277,7 @@ async function copyCookies() {
 
         const newExpiration = calculateExpiration(
           cookie.expirationDate,
-          expirationMode,
+          expirationMode
         );
         if (newExpiration !== undefined) {
           newCookie.expirationDate = newExpiration;
@@ -294,8 +296,10 @@ async function copyCookies() {
       const clearedMsg =
         clearedCount > 0 ? `Cleared ${clearedCount} existing cookie(s). ` : "";
       showStatus(
-        `${clearedMsg}Successfully copied ${successCount} cookie(s) to localhost ${expirationDesc}${errorCount > 0 ? ` (${errorCount} failed)` : ""}`,
-        "success",
+        `${clearedMsg}Successfully copied ${successCount} cookie(s) to localhost ${expirationDesc}${
+          errorCount > 0 ? ` (${errorCount} failed)` : ""
+        }`,
+        "success"
       );
     } else {
       const clearedMsg =
@@ -344,6 +348,269 @@ function handleExpirationChange() {
 }
 
 /**
+ * Generates an HMAC-SHA256 hash of the email using the provided key
+ * Uses the Web Crypto API for browser compatibility
+ * @param {string} email - The email address to hash
+ * @param {string} hmacKey - The HMAC key to use for hashing
+ * @returns {Promise<string>} The hex-encoded HMAC digest
+ */
+async function generateAuthPasscodeHmac(email, hmacKey) {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(hmacKey);
+  const messageData = encoder.encode(email);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign("HMAC", cryptoKey, messageData);
+
+  const hashArray = Array.from(new Uint8Array(signature));
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  return hashHex;
+}
+
+/**
+ * Validates if an email address is properly formatted
+ * @param {string} email - The email to validate
+ * @returns {boolean} True if email is valid, false otherwise
+ */
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+/**
+ * Main function to generate HMAC cookie and set it on the current domain
+ * @returns {Promise<void>}
+ */
+async function generateHmacCookie() {
+  const emailInput = document.getElementById("email");
+  const hmacKeyInput = document.getElementById("hmacKey");
+  const generateButton = document.getElementById("generateHmacButton");
+
+  const email = emailInput.value.trim();
+  const hmacKey = hmacKeyInput.value.trim();
+
+  if (!email) {
+    showStatus("Please enter an email address", "error", "hmacStatus");
+    return;
+  }
+
+  if (!isValidEmail(email)) {
+    showStatus("Please enter a valid email address", "error", "hmacStatus");
+    return;
+  }
+
+  if (!hmacKey) {
+    showStatus("Please enter an HMAC key", "error", "hmacStatus");
+    return;
+  }
+
+  try {
+    generateButton.disabled = true;
+    showStatus("Generating HMAC...", "info", "hmacStatus");
+
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (!tab || !tab.url) {
+      showStatus("Could not determine current tab URL", "error", "hmacStatus");
+      return;
+    }
+
+    const url = new URL(tab.url);
+    const currentDomain = url.hostname;
+
+    if (currentDomain.startsWith("chrome")) {
+      showStatus(
+        "Cannot set cookies on Chrome internal pages",
+        "error",
+        "hmacStatus"
+      );
+      return;
+    }
+
+    const hmacPasscode = await generateAuthPasscodeHmac(email, hmacKey);
+
+    const cookieUrl = `${url.protocol}//${currentDomain}`;
+
+    await chrome.cookies.set({
+      url: cookieUrl,
+      domain: currentDomain,
+      httpOnly: true,
+      name: "_auth_passcode_hmac",
+      path: "/",
+      sameSite: "lax",
+      secure: url.protocol === "https:",
+      value: hmacPasscode,
+    });
+
+    await saveLastEmail(email);
+    await saveHmacKeyForDomain(currentDomain, hmacKey);
+
+    showStatus(
+      `HMAC cookie set successfully on ${currentDomain}`,
+      "success",
+      "hmacStatus"
+    );
+  } catch (error) {
+    console.error("Error generating HMAC cookie:", error);
+    showStatus("Error: " + error.message, "error", "hmacStatus");
+  } finally {
+    generateButton.disabled = false;
+  }
+}
+
+/**
+ * Handles keypress events in the HMAC input fields
+ * Triggers HMAC generation when Enter key is pressed
+ * @param {KeyboardEvent} e - The keyboard event
+ */
+function handleHmacKeypress(e) {
+  if (e.key === "Enter") {
+    generateHmacCookie();
+  }
+}
+
+/**
+ * Saves the HMAC key for a specific domain to Chrome local storage
+ * @param {string} domain - The domain to associate the key with
+ * @param {string} hmacKey - The HMAC key to store
+ * @returns {Promise<void>}
+ */
+async function saveHmacKeyForDomain(domain, hmacKey) {
+  try {
+    const result = await chrome.storage.local.get("hmacKeys");
+    const hmacKeys = result.hmacKeys || {};
+    hmacKeys[domain] = hmacKey;
+    await chrome.storage.local.set({ hmacKeys });
+  } catch (error) {
+    console.error("Error saving HMAC key:", error);
+  }
+}
+
+/**
+ * Retrieves the stored HMAC key for a specific domain
+ * @param {string} domain - The domain to get the key for
+ * @returns {Promise<string|null>} The stored HMAC key or null if not found
+ */
+async function getHmacKeyForDomain(domain) {
+  try {
+    const result = await chrome.storage.local.get("hmacKeys");
+    const hmacKeys = result.hmacKeys || {};
+    return hmacKeys[domain] || null;
+  } catch (error) {
+    console.error("Error retrieving HMAC key:", error);
+    return null;
+  }
+}
+
+/**
+ * Saves the last used email to Chrome local storage
+ * @param {string} email - The email to store
+ * @returns {Promise<void>}
+ */
+async function saveLastEmail(email) {
+  try {
+    await chrome.storage.local.set({ lastEmail: email });
+  } catch (error) {
+    console.error("Error saving last email:", error);
+  }
+}
+
+/**
+ * Retrieves the last used email from Chrome local storage
+ * @returns {Promise<string|null>} The stored email or null if not found
+ */
+async function getLastEmail() {
+  try {
+    const result = await chrome.storage.local.get("lastEmail");
+    return result.lastEmail || null;
+  } catch (error) {
+    console.error("Error retrieving last email:", error);
+    return null;
+  }
+}
+
+/**
+ * Populates the HMAC form fields with stored values
+ * @returns {Promise<void>}
+ */
+async function populateHmacFields() {
+  const emailInput = document.getElementById("email");
+  const hmacKeyInput = document.getElementById("hmacKey");
+
+  const lastEmail = await getLastEmail();
+  if (lastEmail) {
+    emailInput.value = lastEmail;
+  }
+
+  const currentDomain = await getCurrentTabDomain();
+  if (currentDomain) {
+    const storedHmacKey = await getHmacKeyForDomain(currentDomain);
+    if (storedHmacKey) {
+      hmacKeyInput.value = storedHmacKey;
+    }
+  }
+}
+
+/**
+ * Switches to the specified tab and updates the UI accordingly
+ * @param {string} tabId - The ID of the tab to switch to (without '-tab' suffix)
+ */
+function switchTab(tabId) {
+  const tabButtons = document.querySelectorAll(".tab-button");
+  tabButtons.forEach((button) => {
+    if (button.dataset.tab === tabId) {
+      button.classList.add("active");
+    } else {
+      button.classList.remove("active");
+    }
+  });
+
+  const tabContents = document.querySelectorAll(".tab-content");
+  tabContents.forEach((content) => {
+    if (content.id === `${tabId}-tab`) {
+      content.classList.add("active");
+    } else {
+      content.classList.remove("active");
+    }
+  });
+
+  if (tabId === "hmac") {
+    const emailInput = document.getElementById("email");
+    if (!emailInput.value) {
+      emailInput.focus();
+    }
+  } else if (tabId === "copy") {
+    const domainInput = document.getElementById("domain");
+    domainInput.focus();
+    domainInput.select();
+  }
+}
+
+/**
+ * Handles click events on tab buttons
+ * @param {Event} e - The click event
+ */
+function handleTabClick(e) {
+  const tabId = e.target.dataset.tab;
+  if (tabId) {
+    switchTab(tabId);
+  }
+}
+
+/**
  * Initializes the popup by setting up DOM references, event listeners, and auto-populating the domain
  * Called when the DOM content is loaded
  * @returns {Promise<void>}
@@ -353,14 +620,23 @@ async function initializePopup() {
   const copyButton = document.getElementById("copyButton");
   const clearFirstCheckbox = document.getElementById("clearFirst");
   const expirationRadios = document.querySelectorAll(
-    'input[name="expiration"]',
+    'input[name="expiration"]'
   );
+
+  const emailInput = document.getElementById("email");
+  const hmacKeyInput = document.getElementById("hmacKey");
+  const generateHmacButton = document.getElementById("generateHmacButton");
+
+  const tabButtons = document.querySelectorAll(".tab-button");
 
   const currentDomain = await getCurrentTabDomain();
   if (currentDomain) {
     domainInput.value = currentDomain;
-    domainInput.select();
   }
+
+  tabButtons.forEach((button) => {
+    button.addEventListener("click", handleTabClick);
+  });
 
   copyButton.addEventListener("click", copyCookies);
   domainInput.addEventListener("keypress", handleDomainKeypress);
@@ -371,7 +647,17 @@ async function initializePopup() {
     radio.addEventListener("change", handleExpirationChange);
   });
 
-  domainInput.focus();
+  generateHmacButton.addEventListener("click", generateHmacCookie);
+  emailInput.addEventListener("keypress", handleHmacKeypress);
+  hmacKeyInput.addEventListener("keypress", handleHmacKeypress);
+  emailInput.addEventListener("input", () => clearStatus("hmacStatus"));
+  hmacKeyInput.addEventListener("input", () => clearStatus("hmacStatus"));
+
+  await populateHmacFields();
+
+  if (!emailInput.value) {
+    emailInput.focus();
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initializePopup);
