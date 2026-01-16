@@ -7,69 +7,112 @@
     <body>
         <div class="container">
             <h2>Copy Cookies</h2>
-            <div class="form-group">
-                <label for="domain">Source Domain:</label>
-                <input type="text" id="domain" placeholder="example.com" />
+
+            <div class="tabs">
+                <button class="tab-button active" data-tab="hmac">
+                    HMAC Cookie
+                </button>
+                <button class="tab-button" data-tab="copy">Copy Cookies</button>
             </div>
 
-            <div class="form-group">
-                <label>Cookie Expiration:</label>
-                <div class="expiration-options">
-                    <label class="radio-option">
-                        <input
-                            type="radio"
-                            name="expiration"
-                            value="original"
-                            checked
-                        />
-                        <span>Keep Original Expiration</span>
-                    </label>
-                    <label class="radio-option">
-                        <input
-                            type="radio"
-                            name="expiration"
-                            value="development"
-                        />
-                        <span>Development Mode (24 hours)</span>
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="expiration" value="testing" />
-                        <span>Testing Mode (1 hour)</span>
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="expiration" value="session" />
-                        <span>Session Only (browser close)</span>
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="expiration" value="custom" />
-                        <span
-                            >Custom:
+            <div id="hmac-tab" class="tab-content active">
+                <div class="form-group">
+                    <label for="email">Email Address:</label>
+                    <input
+                        type="email"
+                        id="email"
+                        placeholder="user@example.com"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="hmacKey">HMAC Key:</label>
+                    <input
+                        type="password"
+                        id="hmacKey"
+                        placeholder="Enter HMAC key"
+                    />
+                </div>
+                <button id="generateHmacButton">Generate HMAC Cookie</button>
+                <div id="hmacStatus" class="status"></div>
+            </div>
+
+            <div id="copy-tab" class="tab-content">
+                <div class="form-group">
+                    <label for="domain">Source Domain:</label>
+                    <input type="text" id="domain" placeholder="example.com" />
+                </div>
+
+                <div class="form-group">
+                    <label>Cookie Expiration:</label>
+                    <div class="expiration-options">
+                        <label class="radio-option">
                             <input
-                                type="number"
-                                id="customHours"
-                                min="1"
-                                max="8760"
-                                value="24"
-                                disabled
+                                type="radio"
+                                name="expiration"
+                                value="original"
+                                checked
                             />
-                            <select id="customUnit" disabled>
-                                <option value="hours">hours</option>
-                                <option value="days">days</option>
-                            </select>
-                        </span>
+                            <span>Keep Original Expiration</span>
+                        </label>
+                        <label class="radio-option">
+                            <input
+                                type="radio"
+                                name="expiration"
+                                value="development"
+                            />
+                            <span>Development Mode (24 hours)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input
+                                type="radio"
+                                name="expiration"
+                                value="testing"
+                            />
+                            <span>Testing Mode (1 hour)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input
+                                type="radio"
+                                name="expiration"
+                                value="session"
+                            />
+                            <span>Session Only (browser close)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input
+                                type="radio"
+                                name="expiration"
+                                value="custom"
+                            />
+                            <span
+                                >Custom:
+                                <input
+                                    type="number"
+                                    id="customHours"
+                                    min="1"
+                                    max="8760"
+                                    value="24"
+                                    disabled
+                                />
+                                <select id="customUnit" disabled>
+                                    <option value="hours">hours</option>
+                                    <option value="days">days</option>
+                                </select>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-option">
+                        <input type="checkbox" id="clearFirst" />
+                        <span>Clear all localhost cookies before copying</span>
                     </label>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label class="checkbox-option">
-                    <input type="checkbox" id="clearFirst" />
-                    <span>Clear all localhost cookies before copying</span>
-                </label>
+                <button id="copyButton">Copy Cookies to Localhost</button>
+                <div id="status" class="status"></div>
             </div>
-
-            <button id="copyButton">Copy Cookies to Localhost</button>
-            <div id="status" class="status"></div>
         </div>
         <script src="js/popup.js"></script>
     </body>
