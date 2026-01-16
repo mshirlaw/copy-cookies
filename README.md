@@ -2,7 +2,9 @@
 
 **Effortlessly copy cookies from any website to localhost for seamless development and testing.**
 
-![Copy Cookies Extension UI](img/ui.png)
+| | |
+|:---:|:---:|
+| ![Copy Cookies Extension UI 2](img/ui2.png) | ![Copy Cookies Extension UI 1](img/ui1.png) |
 
 ## 🚀 What it does
 
@@ -70,7 +72,8 @@ copy-cookies/
     ├── icon16.png        # Extension icon (16x16)
     ├── icon48.png        # Extension icon (48x48)
     ├── icon128.png       # Extension icon (128x128)
-    └── ui.png            # UI screenshot
+    ├── ui1.png           # UI screenshot 1
+    └── ui2.png           # UI screenshot 2
 ```
 
 ### Required Permissions
