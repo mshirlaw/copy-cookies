@@ -1,6 +1,6 @@
 # Copy Cookies - Chrome Extension
 
-**Effortlessly copy cookies from any website to localhost for seamless development and testing.**
+**Effortlessly copy cookies from any website to localhost and generate HMAC cookies for seamless development and testing.**
 
 | | |
 |:---:|:---:|
@@ -8,14 +8,15 @@
 
 ## 🚀 What it does
 
-Copy Cookies is a developer-friendly Chrome extension that simplifies the process of copying cookies from any domain to localhost. Perfect for developers who need to test applications with real user session data or authentication cookies.
+Copy Cookies is a developer-friendly Chrome extension that simplifies copying cookies from any domain to localhost and generating HMAC cookies on demand. It is built for developers who need to test applications with real session data or authentication cookies.
 
 ## ✨ Key Features
 
 - **🎯 Smart Domain Detection** - Automatically detects and populates the current website's domain
 - **🔄 One-Click Cookie Transfer** - Copy all cookies from any domain to localhost instantly
+- **🔐 HMAC Cookie Generator** - Create an `_auth_passcode_hmac` cookie for the active domain
 - **✅ Real-time Status Updates** - Get immediate feedback on the copying process
-- **🛡️ Input Validation** - Built-in domain name validation for error-free operation
+- **🛡️ Input Validation** - Built-in domain name and email validation for error-free operation
 - **🔧 Cookie Attribute Handling** - Properly handles httpOnly, sameSite, and other cookie attributes
 - **🎨 Clean, Intuitive Interface** - Simple and user-friendly design
 
@@ -30,9 +31,22 @@ Copy Cookies is a developer-friendly Chrome extension that simplifies the proces
 
 1. **Navigate** to any website in Chrome
 2. **Click** the Copy Cookies extension icon in your toolbar
-3. **Verify** the auto-populated domain (or edit if needed)
-4. **Click** "Copy Cookies to Localhost"
-5. **Done!** All cookies are now available on localhost
+3. **Choose** the Copy Cookies tab
+4. **Verify** the auto-populated domain (or edit if needed)
+5. **Optionally** expand Advanced Options to set cookie expiration
+6. **Click** "Copy Cookies to Localhost"
+7. **Done!** All cookies are now available on localhost
+
+### Generate an HMAC Cookie
+
+1. **Choose** the HMAC Cookie tab
+2. **Enter** your email address and HMAC key
+3. **Click** "Generate HMAC Cookie" to set `_auth_passcode_hmac` on the current domain
+
+### Advanced Options
+
+- **Cookie Expiration** - Keep the original expiration or choose a development/testing/session/custom duration
+- **Clear Localhost First** - Wipe existing localhost cookies before copying when enabled
 
 ## 🔒 Privacy & Security
 
@@ -56,6 +70,7 @@ Copy Cookies is a developer-friendly Chrome extension that simplifies the proces
 - The extension requires "cookies" permission to read and write cookies
 - Cookies are copied to `http://localhost` (not HTTPS)
 - Secure cookies from HTTPS sites are converted to non-secure for localhost compatibility
+- Success messages include a quick link to open localhost
 - The extension handles various cookie attributes including httpOnly and sameSite
 
 ### Project Structure
@@ -81,6 +96,7 @@ copy-cookies/
 - **`cookies`** - Read cookies from source domains and write to localhost
 - **`activeTab`** - Work with the current tab
 - **`tabs`** - Query the current tab's URL for auto-populating the domain
+- **`storage`** - Store recent HMAC settings
 - **`host_permissions`** - Access cookies from any HTTP/HTTPS domain
 
 ## 🐛 Troubleshooting
