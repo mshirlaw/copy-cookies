@@ -11,6 +11,26 @@ function showStatus(message, type = "info", elementId = "status") {
 }
 
 /**
+ * Displays a status message with a link
+ * @param {string} message - The message to display
+ * @param {string} linkText - The link text to display
+ * @param {string} linkHref - The link URL
+ * @param {string} [type="info"] - The type of message (info, success, error)
+ * @param {string} [elementId="status"] - The ID of the status element to update
+ */
+function showStatusWithLink(
+  message,
+  linkText,
+  linkHref,
+  type = "info",
+  elementId = "status"
+) {
+  const statusDiv = document.getElementById(elementId);
+  statusDiv.innerHTML = `${message} <a href="${linkHref}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
+  statusDiv.className = `status ${type}`;
+}
+
+/**
  * Clears the current status message
  * @param {string} [elementId="status"] - The ID of the status element to clear
  */
@@ -170,6 +190,27 @@ async function clearLocalhostCookies() {
 }
 
 /**
+ * Gets the full URL for the currently active tab
+ * @returns {Promise<URL|null>} The parsed URL or null if unavailable
+ */
+async function getCurrentTabUrl() {
+  try {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (tab && tab.url && tab.url.startsWith("http")) {
+      return new URL(tab.url);
+    }
+  } catch (error) {
+    console.log("Could not get current tab URL:", error);
+  }
+
+  return null;
+}
+
+/**
  * Gets the domain of the currently active tab for auto-population
  * @returns {Promise<string|null>} The domain of the current tab, or null if unavailable
  */
@@ -199,6 +240,25 @@ async function getCurrentTabDomain() {
   }
 
   return null;
+}
+
+/**
+ * Builds the localhost link for success messages
+ * @returns {Promise<string>} The localhost link URL
+ */
+async function getLocalhostLinkHref() {
+  const defaultHref = "http://localhost";
+
+  try {
+    const currentUrl = await getCurrentTabUrl();
+    if (currentUrl && currentUrl.pathname.includes("/auto-insights")) {
+      return `${defaultHref}${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
+    }
+  } catch (error) {
+    console.log("Could not build localhost link:", error);
+  }
+
+  return defaultHref;
 }
 
 /**
@@ -295,10 +355,14 @@ async function copyCookies() {
       const expirationDesc = getExpirationDescription(expirationMode);
       const clearedMsg =
         clearedCount > 0 ? `Cleared ${clearedCount} existing cookie(s). ` : "";
-      showStatus(
-        `${clearedMsg}Successfully copied ${successCount} cookie(s) to localhost ${expirationDesc}${
-          errorCount > 0 ? ` (${errorCount} failed)` : ""
-        }`,
+      const successMessage = `${clearedMsg}Successfully copied ${successCount} cookie(s) to localhost ${expirationDesc}${
+        errorCount > 0 ? ` (${errorCount} failed)` : ""
+      }`;
+      const localhostHref = await getLocalhostLinkHref();
+      showStatusWithLink(
+        successMessage,
+        "Open localhost",
+        localhostHref,
         "success"
       );
     } else {
@@ -619,6 +683,7 @@ async function initializePopup() {
   const domainInput = document.getElementById("domain");
   const copyButton = document.getElementById("copyButton");
   const clearFirstCheckbox = document.getElementById("clearFirst");
+  const advancedOptions = document.querySelector(".advanced-options");
   const expirationRadios = document.querySelectorAll(
     'input[name="expiration"]'
   );
@@ -646,6 +711,10 @@ async function initializePopup() {
   expirationRadios.forEach((radio) => {
     radio.addEventListener("change", handleExpirationChange);
   });
+
+  if (advancedOptions) {
+    advancedOptions.addEventListener("toggle", clearStatus);
+  }
 
   generateHmacButton.addEventListener("click", generateHmacCookie);
   emailInput.addEventListener("keypress", handleHmacKeypress);
