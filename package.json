@@ -1,0 +1,28 @@
+{
+  "name": "copy-cookies-extension",
+  "version": "1.0.0",
+  "description": "Copy cookies from any domain to localhost for seamless development and testing",
+  "scripts": {
+    "build": "npm run package",
+    "package": "zip -r extension.zip . -x '*.git*' '*.md' '*.yml' '*.yaml' '.github/*' 'node_modules/*' '*.log' '.DS_Store' '*.tmp' 'package*.json'",
+    "validate": "cat manifest.json | jq empty && echo 'Manifest is valid'",
+    "test": "npm run validate && echo 'All tests passed'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "cookies",
+    "development",
+    "localhost",
+    "developer-tools"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/copy-cookies.git"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

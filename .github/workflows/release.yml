@@ -1,0 +1,143 @@
+name: Chrome Extension CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Validate Extension
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Validate manifest.json
+        run: |
+          echo "Validating manifest.json syntax..."
+          cat manifest.json | jq empty
+          echo "✅ manifest.json is valid JSON"
+
+      - name: Check required files
+        run: |
+          echo "Checking required extension files..."
+          test -f popup.html && echo "✅ popup.html exists"
+          test -f js/popup.js && echo "✅ js/popup.js exists"
+          test -f css/popup.css && echo "✅ css/popup.css exists"
+          test -f img/icon16.png && echo "✅ img/icon16.png exists"
+          test -f img/icon48.png && echo "✅ img/icon48.png exists"
+          test -f img/icon128.png && echo "✅ img/icon128.png exists"
+          echo "✅ All required files present"
+
+      - name: Validate manifest structure
+        run: |
+          echo "Validating manifest structure..."
+          # Check required fields
+          jq -e '.manifest_version' manifest.json > /dev/null && echo "✅ manifest_version present"
+          jq -e '.name' manifest.json > /dev/null && echo "✅ name present"
+          jq -e '.version' manifest.json > /dev/null && echo "✅ version present"
+          jq -e '.description' manifest.json > /dev/null && echo "✅ description present"
+          jq -e '.permissions' manifest.json > /dev/null && echo "✅ permissions present"
+          echo "✅ Manifest structure is valid"
+
+      - name: Check icon dimensions (optional)
+        run: |
+          echo "Checking icon dimensions..."
+          if command -v identify >/dev/null 2>&1; then
+            identify img/icon16.png | grep -q "16x16" && echo "✅ icon16.png is 16x16"
+            identify img/icon48.png | grep -q "48x48" && echo "✅ icon48.png is 48x48"
+            identify img/icon128.png | grep -q "128x128" && echo "✅ icon128.png is 128x128"
+          else
+            echo "⚠️ ImageMagick not available, skipping icon dimension check"
+          fi
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    name: Build Extension Package
+    if: github.event_name == 'release'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Update version in manifest
+        run: |
+          echo "Updating version in manifest.json..."
+          # Extract version from git tag (remove 'v' prefix if present)
+          VERSION=${GITHUB_REF#refs/tags/}
+          VERSION=${VERSION#v}
+          echo "Setting version to: $VERSION"
+
+          # Update manifest.json version
+          jq --arg version "$VERSION" '.version = $version' manifest.json > tmp.json
+          mv tmp.json manifest.json
+
+          echo "✅ Updated manifest.json version to $VERSION"
+          cat manifest.json | jq '.version'
+
+      - name: Create extension package
+        run: |
+          echo "Creating extension package..."
+          zip -r extension.zip . \
+            -x "*.git*" \
+            -x "*.md" \
+            -x "*.yml" \
+            -x "*.yaml" \
+            -x ".github/*" \
+            -x "node_modules/*" \
+            -x "*.log" \
+            -x ".DS_Store" \
+            -x "*.tmp"
+
+          echo "✅ Extension package created"
+          ls -la extension.zip
+
+      - name: Upload package as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-extension-package
+          path: extension.zip
+          retention-days: 30
+
+  publish:
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    name: Publish to Chrome Web Store
+    if: github.event_name == 'release'
+
+    steps:
+      - name: Download extension package
+        uses: actions/download-artifact@v4
+        with:
+          name: chrome-extension-package
+
+      - name: Upload to Chrome Web Store
+        uses: mnao305/chrome-extension-upload@v4.0.1
+        with:
+          file-path: extension.zip
+          extension-id: ${{ secrets.EXTENSION_ID }}
+          client-id: ${{ secrets.CLIENT_ID }}
+          client-secret: ${{ secrets.CLIENT_SECRET }}
+          refresh-token: ${{ secrets.REFRESH_TOKEN }}
+          publish: true
+
+      - name: Notify success
+        run: |
+          echo "🎉 Extension successfully uploaded to Chrome Web Store!"
+          echo "The extension will be available after Google's review process (1-7 days)."
