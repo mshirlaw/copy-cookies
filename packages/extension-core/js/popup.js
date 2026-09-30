@@ -1,3 +1,5 @@
+const extensionApi = globalThis.browser ?? globalThis.chrome;
+
 /**
  * Displays a status message to the user with specified styling
  * @param {string} message - The message to display
@@ -26,7 +28,14 @@ function showStatusWithLink(
   elementId = "status"
 ) {
   const statusDiv = document.getElementById(elementId);
-  statusDiv.innerHTML = `${message} <a href="${linkHref}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
+  const link = document.createElement("a");
+  link.href = linkHref;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = linkText;
+
+  statusDiv.textContent = `${message} `;
+  statusDiv.append(link);
   statusDiv.className = `status ${type}`;
 }
 
@@ -164,14 +173,14 @@ function getExpirationDescription(mode) {
  */
 async function clearLocalhostCookies() {
   try {
-    const localhostCookies = await chrome.cookies.getAll({
+    const localhostCookies = await extensionApi.cookies.getAll({
       url: "http://localhost",
     });
 
     let clearedCount = 0;
     for (const cookie of localhostCookies) {
       try {
-        await chrome.cookies.remove({
+        await extensionApi.cookies.remove({
           url: "http://localhost",
           name: cookie.name,
           path: cookie.path,
@@ -195,7 +204,7 @@ async function clearLocalhostCookies() {
  */
 async function getCurrentTabUrl() {
   try {
-    const [tab] = await chrome.tabs.query({
+    const [tab] = await extensionApi.tabs.query({
       active: true,
       currentWindow: true,
     });
@@ -216,7 +225,7 @@ async function getCurrentTabUrl() {
  */
 async function getCurrentTabDomain() {
   try {
-    const [tab] = await chrome.tabs.query({
+    const [tab] = await extensionApi.tabs.query({
       active: true,
       currentWindow: true,
     });
@@ -310,7 +319,7 @@ async function copyCookies() {
 
     showStatus("Copying cookies...", "info");
 
-    const cookies = await chrome.cookies.getAll({
+    const cookies = await extensionApi.cookies.getAll({
       domain: normalizedDomain,
     });
 
@@ -343,7 +352,7 @@ async function copyCookies() {
           newCookie.expirationDate = newExpiration;
         }
 
-        await chrome.cookies.set(newCookie);
+        await extensionApi.cookies.set(newCookie);
         successCount++;
       } catch (error) {
         console.error(`Failed to copy cookie ${cookie.name}:`, error);
@@ -482,7 +491,7 @@ async function generateHmacCookie() {
     generateButton.disabled = true;
     showStatus("Generating HMAC...", "info", "hmacStatus");
 
-    const [tab] = await chrome.tabs.query({
+    const [tab] = await extensionApi.tabs.query({
       active: true,
       currentWindow: true,
     });
@@ -493,22 +502,23 @@ async function generateHmacCookie() {
     }
 
     const url = new URL(tab.url);
-    const currentDomain = url.hostname;
 
-    if (currentDomain.startsWith("chrome")) {
+    if (!["http:", "https:"].includes(url.protocol)) {
       showStatus(
-        "Cannot set cookies on Chrome internal pages",
+        "Cookies can only be set on HTTP or HTTPS pages",
         "error",
         "hmacStatus"
       );
       return;
     }
 
+    const currentDomain = url.hostname;
+
     const hmacPasscode = await generateAuthPasscodeHmac(email, hmacKey);
 
     const cookieUrl = `${url.protocol}//${currentDomain}`;
 
-    await chrome.cookies.set({
+    await extensionApi.cookies.set({
       url: cookieUrl,
       domain: currentDomain,
       httpOnly: true,
@@ -547,17 +557,17 @@ function handleHmacKeypress(e) {
 }
 
 /**
- * Saves the HMAC key for a specific domain to Chrome local storage
+ * Saves the HMAC key for a specific domain to extension local storage
  * @param {string} domain - The domain to associate the key with
  * @param {string} hmacKey - The HMAC key to store
  * @returns {Promise<void>}
  */
 async function saveHmacKeyForDomain(domain, hmacKey) {
   try {
-    const result = await chrome.storage.local.get("hmacKeys");
+    const result = await extensionApi.storage.local.get("hmacKeys");
     const hmacKeys = result.hmacKeys || {};
     hmacKeys[domain] = hmacKey;
-    await chrome.storage.local.set({ hmacKeys });
+    await extensionApi.storage.local.set({ hmacKeys });
   } catch (error) {
     console.error("Error saving HMAC key:", error);
   }
@@ -570,7 +580,7 @@ async function saveHmacKeyForDomain(domain, hmacKey) {
  */
 async function getHmacKeyForDomain(domain) {
   try {
-    const result = await chrome.storage.local.get("hmacKeys");
+    const result = await extensionApi.storage.local.get("hmacKeys");
     const hmacKeys = result.hmacKeys || {};
     return hmacKeys[domain] || null;
   } catch (error) {
@@ -580,25 +590,25 @@ async function getHmacKeyForDomain(domain) {
 }
 
 /**
- * Saves the last used email to Chrome local storage
+ * Saves the last used email to extension local storage
  * @param {string} email - The email to store
  * @returns {Promise<void>}
  */
 async function saveLastEmail(email) {
   try {
-    await chrome.storage.local.set({ lastEmail: email });
+    await extensionApi.storage.local.set({ lastEmail: email });
   } catch (error) {
     console.error("Error saving last email:", error);
   }
 }
 
 /**
- * Retrieves the last used email from Chrome local storage
+ * Retrieves the last used email from extension local storage
  * @returns {Promise<string|null>} The stored email or null if not found
  */
 async function getLastEmail() {
   try {
-    const result = await chrome.storage.local.get("lastEmail");
+    const result = await extensionApi.storage.local.get("lastEmail");
     return result.lastEmail || null;
   } catch (error) {
     console.error("Error retrieving last email:", error);

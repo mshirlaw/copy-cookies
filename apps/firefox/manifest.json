@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Copy Cookies",
+  "version": "1.0",
+  "description": "Copy cookies from any domain to localhost",
+  "permissions": ["cookies", "activeTab", "tabs", "storage"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Copy Cookies"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "@copy-cookies",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "icons": {
+    "16": "img/icon16.png",
+    "48": "img/icon48.png",
+    "128": "img/icon128.png"
+  }
+}
