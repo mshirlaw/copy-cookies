@@ -1,0 +1,25 @@
+{
+  "name": "copy-cookies",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:chrome": "node scripts/build.mjs chrome",
+    "build:firefox": "node scripts/build.mjs firefox",
+    "validate": "node scripts/validate.mjs",
+    "lint": "npm run validate && npm run build && npm run lint:firefox",
+    "lint:firefox": "web-ext lint --source-dir dist/firefox",
+    "package": "npm run package:chrome && npm run package:firefox",
+    "package:chrome": "npm run build:chrome && web-ext build --source-dir dist/chrome --artifacts-dir artifacts/chrome --overwrite-dest",
+    "package:firefox": "npm run build:firefox && web-ext build --source-dir dist/firefox --artifacts-dir artifacts/firefox --overwrite-dest",
+    "dev:firefox": "npm run build:firefox && web-ext run --source-dir dist/firefox"
+  },
+  "devDependencies": {
+    "web-ext": "10.7.0"
+  }
+}

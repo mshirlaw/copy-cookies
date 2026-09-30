@@ -1,4 +1,4 @@
-# Copy Cookies - Chrome Extension
+# Copy Cookies - Chrome and Firefox Extension
 
 **Effortlessly copy cookies from any website to localhost and generate HMAC cookies for seamless development and testing.**
 
@@ -8,7 +8,7 @@
 
 ## 🚀 What it does
 
-Copy Cookies is a developer-friendly Chrome extension that simplifies copying cookies from any domain to localhost and generating HMAC cookies on demand. It is built for developers who need to test applications with real session data or authentication cookies.
+Copy Cookies is a developer-friendly browser extension for Chrome and Firefox that simplifies copying cookies from any domain to localhost and generating HMAC cookies on demand. It is built for developers who need to test applications with real session data or authentication cookies.
 
 ## ✨ Key Features
 
@@ -29,7 +29,7 @@ Copy Cookies is a developer-friendly Chrome extension that simplifies copying co
 
 ## 📱 How to Use
 
-1. **Navigate** to any website in Chrome
+1. **Navigate** to any website in Chrome or Firefox
 2. **Click** the Copy Cookies extension icon in your toolbar
 3. **Choose** the Copy Cookies tab
 4. **Verify** the auto-populated domain (or edit if needed)
@@ -52,18 +52,41 @@ Copy Cookies is a developer-friendly Chrome extension that simplifies copying co
 
 - **Local Processing** - All cookie operations happen locally in your browser
 - **No Data Collection** - We don't collect, store, or transmit any of your data
-- **Secure Handling** - Cookies are processed securely within Chrome's extension environment
+- **Secure Handling** - Cookies are processed within the browser extension environment
 - **Permission Transparency** - Only requests necessary permissions for cookie operations
 
 ## 🛠️ Development Setup
 
 ### Installation for Development
 
-1. **Download or clone** this repository
-2. **Open Chrome** and navigate to `chrome://extensions/`
-3. **Enable "Developer mode"** in the top right corner
-4. **Click "Load unpacked"** and select the project folder
-5. **The extension** will appear in your extensions list
+Install dependencies and build both browser targets:
+
+```bash
+npm install
+npm run build
+```
+
+For Chrome, open `chrome://extensions/`, enable Developer mode, click **Load unpacked**, and select `dist/chrome`.
+
+> Do not load the repository root or `apps/chrome`. They contain source configuration, not a complete extension. Always load the generated `dist/chrome` directory.
+
+For Firefox, open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on**, and select `dist/firefox/manifest.json`. You can also build and launch Firefox with:
+
+```bash
+npm run dev:firefox
+```
+
+See [INSTALLATION.md](INSTALLATION.md) for complete instructions.
+
+### Build Commands
+
+```bash
+npm run build             # Build Chrome and Firefox directories
+npm run build:chrome      # Build only dist/chrome
+npm run build:firefox     # Build only dist/firefox
+npm run lint              # Validate both manifests and the Firefox build
+npm run package           # Create browser-specific ZIP artifacts
+```
 
 ### Development Notes
 
@@ -77,19 +100,19 @@ Copy Cookies is a developer-friendly Chrome extension that simplifies copying co
 
 ```
 copy-cookies/
-├── manifest.json          # Extension configuration and permissions
-├── popup.html            # User interface
-├── css/
-│   └── popup.css         # Styling for the popup
-├── js/
-│   └── popup.js          # Main functionality for copying cookies
-└── img/
-    ├── icon16.png        # Extension icon (16x16)
-    ├── icon48.png        # Extension icon (48x48)
-    ├── icon128.png       # Extension icon (128x128)
-    ├── ui1.png           # UI screenshot 1
-    └── ui2.png           # UI screenshot 2
+├── apps/
+│   ├── chrome/            # Chrome manifest and workspace metadata
+│   └── firefox/           # Firefox manifest and workspace metadata
+├── packages/
+│   └── extension-core/    # Shared popup, scripts, styles, and icons
+├── scripts/
+│   └── build.mjs          # Assembles browser-specific builds
+├── dist/                  # Generated unpacked extensions (gitignored)
+├── artifacts/             # Generated ZIP packages (gitignored)
+└── img/                   # README screenshots
 ```
+
+The checked-in source stays shared under `packages/extension-core`. Each app owns only its browser-specific manifest. Generated files are kept out of Git so Chrome and Firefox source code cannot drift apart.
 
 ### Required Permissions
 
@@ -114,7 +137,8 @@ copy-cookies/
 
 **Extension Not Working:**
 
-- Verify the extension is enabled in `chrome://extensions/`
+- Rebuild with `npm run build` after changing source files
+- Verify the extension is enabled in `chrome://extensions/` or `about:addons`
 - Try refreshing the page and reopening the extension
 - Check if the extension has the required permissions
 
