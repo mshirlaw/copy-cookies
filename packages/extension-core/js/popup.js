@@ -252,14 +252,87 @@ async function getCurrentTabDomain() {
 }
 
 /**
+ * Builds the storage key that scopes a port to one app on one host
+ * An app is identified by the host plus the first two path segments (e.g. /ayx-one/ai-agents)
+ * @param {URL|null} url - The current tab URL
+ * @returns {string|null} The app key, or null if no URL is available
+ */
+function getAppKey(url) {
+  if (!url) {
+    return null;
+  }
+  const appPath = url.pathname.split("/").filter(Boolean).slice(0, 2).join("/");
+  return `${url.host}/${appPath}`;
+}
+
+/**
+ * Saves the localhost port for the current app to extension local storage
+ * @param {string} port - The port to store (empty string clears it)
+ * @returns {Promise<void>}
+ */
+async function saveLocalhostPort(port) {
+  try {
+    const appKey = getAppKey(await getCurrentTabUrl());
+    if (!appKey) {
+      return;
+    }
+    const result = await extensionApi.storage.local.get("localhostPorts");
+    const localhostPorts = result.localhostPorts || {};
+    if (port) {
+      localhostPorts[appKey] = port;
+    } else {
+      delete localhostPorts[appKey];
+    }
+    await extensionApi.storage.local.set({ localhostPorts });
+  } catch (error) {
+    console.error("Error saving localhost port:", error);
+  }
+}
+
+/**
+ * Retrieves the stored localhost port for the current app
+ * @returns {Promise<string>} The stored port or an empty string
+ */
+async function getLocalhostPort() {
+  try {
+    const appKey = getAppKey(await getCurrentTabUrl());
+    const result = await extensionApi.storage.local.get("localhostPorts");
+    return (appKey && result.localhostPorts?.[appKey]) || "";
+  } catch (error) {
+    console.error("Error retrieving localhost port:", error);
+    return "";
+  }
+}
+
+/**
+ * Normalizes user input into a valid TCP port string
+ * @param {string} value - Raw port input
+ * @returns {string} The port digits, or an empty string if invalid
+ */
+function normalizePort(value) {
+  const port = value.trim();
+  if (!/^\d{1,5}$/.test(port) || Number(port) > 65535) {
+    return "";
+  }
+  return port;
+}
+
+/**
  * Builds the localhost link for success messages
+ * Uses the configured port and preserves the current tab path when a port is set
  * @returns {Promise<string>} The localhost link URL
  */
 async function getLocalhostLinkHref() {
   const defaultHref = "http://localhost";
 
   try {
+    const port = normalizePort(
+      document.getElementById("localhostPort").value
+    );
     const currentUrl = await getCurrentTabUrl();
+    if (port && currentUrl) {
+      return `${defaultHref}:${port}${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
+    }
     if (currentUrl && currentUrl.pathname.includes("/auto-insights")) {
       return `${defaultHref}${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
     }
@@ -731,6 +804,13 @@ async function initializePopup() {
   hmacKeyInput.addEventListener("keypress", handleHmacKeypress);
   emailInput.addEventListener("input", () => clearStatus("hmacStatus"));
   hmacKeyInput.addEventListener("input", () => clearStatus("hmacStatus"));
+
+  const localhostPortInput = document.getElementById("localhostPort");
+  localhostPortInput.value = await getLocalhostPort();
+  localhostPortInput.addEventListener("input", () => {
+    saveLocalhostPort(normalizePort(localhostPortInput.value));
+    clearStatus();
+  });
 
   await populateHmacFields();
 
